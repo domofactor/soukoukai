@@ -13,7 +13,17 @@ class MyApp < Sinatra::Base
     haml :index
   end
 
-  get '/:locale' do
+  get '/test' do
+    haml :test
+  end
+
+  get '/en' do
+    session[:locale] = 'en'
+    haml :test
+  end
+
+  get '/ja' do
+    session[:locale] = 'ja'
     haml :test
   end
 end
