@@ -4,26 +4,14 @@ require 'haml'
 
 class MyApp < Sinatra::Base
   register Sinatra::R18n
-
-  before do
-    session[:locale] = params[:locale] if params[:locale]
-  end
+  use Rack::Session::Cookie, :key => 'rack.session'
 
   get '/' do
     haml :index
   end
 
-  get '/test' do
-    haml :test
-  end
-
-  get '/en' do
-    session[:locale] = 'en'
-    haml :test
-  end
-
-  get '/ja' do
-    session[:locale] = 'ja'
-    haml :test
+  get '/lang/:locale' do
+    session[:locale] = params[:locale]
+    redirect back
   end
 end
