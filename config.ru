@@ -1,5 +1,9 @@
-# config.ru
-#require File.expand_path '../myapp.rb', __FILE__
-require_relative 'myapp'
+#!/usr/bin/env rackup
+# encoding: utf-8
 
-run MyApp
+# This file can be used to start Padrino,
+# just execute it from the command line.
+
+require File.expand_path("../config/boot.rb", __FILE__)
+
+run Padrino.application
