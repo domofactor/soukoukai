@@ -7,9 +7,9 @@ module Soukoukai
     enable :sessions
 
     #I18n/Locale Support
-    register Padrino::Contrib::AutoLocale
-    set :locales, [:en, :ja]
-    set :locale_exclusive_paths, ['/js', '/css', '/img']
+    #register Padrino::Contrib::AutoLocale
+    #set :locales, [:en, :ja]
+    #set :locale_exclusive_paths, ['/js', '/css', '/img']
 
     ##
     # Caching support.
