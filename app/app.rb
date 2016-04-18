@@ -70,5 +70,11 @@ module Soukoukai
     get "/" do
       I18n.t("welcome")
     end
+    get "/en" do
+      switch_to_lang(:en)
+    end
+    get "/ja" do
+      switch_to_lang(:ja)
+    end
   end
 end
