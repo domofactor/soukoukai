@@ -6,4 +6,4 @@ gem 'sqlite3'
 gem 'bcrypt'
 gem 'haml'
 
-gem 'padrino-contrib', github: "padrino/padrino-contrib"
+#gem 'padrino-contrib', github: "padrino/padrino-contrib"

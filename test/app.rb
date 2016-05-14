@@ -1,9 +1,8 @@
 module Soukoukai
-  class Admin < Padrino::Application
+  class Test < Padrino::Application
     use ConnectionPoolManagement
     register Padrino::Mailer
     register Padrino::Helpers
-    register Padrino::Admin::AccessControl
 
     ##
     # Application configuration options
@@ -21,20 +20,7 @@ module Soukoukai
     # layout  :my_layout              # Layout can be in views/layouts/foo.ext or views/foo.ext (default :application)
     #
 
-    set :admin_model, 'Account'
-    set :login_page,  '/sessions/new'
-
     enable  :sessions
-    disable :store_location
-
-    access_control.roles_for :any do |role|
-      role.protect '/'
-      role.allow   '/sessions'
-    end
-
-    access_control.roles_for :admin do |role|
-      role.project_module :accounts, '/accounts'
-    end
 
     # Custom error management 
     error(403) { @title = "Error 403"; render('errors/403', :layout => :error) }
