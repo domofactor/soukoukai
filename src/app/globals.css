@@ -266,3 +266,27 @@ svg{flex-shrink:0}
   .prose-page{padding:45px 6% 65px}.prose-page h1{font-size:46px}.prose-page h2{font-size:22px}.prose-page p{font-size:12px}.save-dialog{padding:28px}.save-dialog h2{font-size:25px}
 }
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{transition:none!important;animation:none!important}}
+textarea{font:inherit;min-width:0;color:var(--text);background:white;border:1px solid var(--line);border-radius:5px;padding:12px;resize:vertical}
+textarea:focus-visible{outline:3px solid #6d9d4e;outline-offset:4px}
+.language-switch{padding:7px;max-width:100px;font-size:12px}
+.site-header{gap:16px}
+.site-header nav{gap:18px}
+.discipline-tabs{flex-wrap:wrap}
+.explorer-toolbar{flex-wrap:wrap}
+.event-description{padding:0 19px 15px;font-size:12px;line-height:1.6}
+.event-description p{white-space:pre-wrap;overflow-wrap:anywhere;margin:10px 0}
+.event-description summary{cursor:pointer}
+.provenance{font-size:10px;padding:0 19px;margin-bottom:12px;color:#526647}
+.badge.gymkhana,.badge.pvc_drift,.badge.show,.badge.other{background:#eee9f2;color:#71617f}
+.portal-editor{background:white;border:1px solid var(--line);border-radius:6px;padding:25px;margin:30px 0}
+.event-fields{border:0;padding:0;margin:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;min-width:0}
+.event-fields>label:has(textarea),.event-fields>p{grid-column:1/-1}
+.event-fields textarea,.event-fields input:not([type=checkbox]),.event-fields select{width:100%}
+.event-fields .check-label{flex-direction:row;align-items:center}
+.event-fields .button{justify-self:start}
+.portal-listing{display:flex;justify-content:space-between;align-items:center;gap:20px;background:white;border:1px solid var(--line);padding:20px;border-radius:6px}
+.portal-listing p{margin-bottom:10px}
+.portal-controls{display:flex;gap:10px;flex-wrap:wrap}
+.map-reset{background:white;font-size:11px;padding:8px;min-height:30px}
+html[lang=ja] h1,html[lang=ja] h2,html[lang=ja] h3{letter-spacing:0;line-height:1.4}
+@media(max-width:760px){.event-fields{grid-template-columns:1fr}.portal-listing{flex-direction:column;align-items:flex-start}.site-header{gap:8px}.language-switch{max-width:77px;font-size:10px}.header-account{padding:7px;font-size:9px}.brand{font-size:13px}.footer-links{flex-wrap:wrap}.discipline-tabs button{padding:8px 10px}}

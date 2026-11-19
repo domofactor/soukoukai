@@ -1,4 +1,5 @@
 import type { Circuit, TrackEvent } from "./types";
+import { disciplines } from "./event-types";
 
 export const demoCircuits: Circuit[] = [
   { id: "tsukuba", name: "Tsukuba Circuit", nameJa: "筑波サーキット", prefecture: "Ibaraki", region: "Kanto", latitude: 36.1517, longitude: 139.9194, website: "https://www.tsukuba-circuit.jp/" },
@@ -23,8 +24,12 @@ export function demoEvents(now = new Date()): TrackEvent[] {
       id: `demo-${index}`, title: titles[index % titles.length],
       organizer: "Sample organizer", circuitId: circuit.id, startsAt: date.toISOString(),
       priceYen: [18000, 12000, 22000, 28000][index % 4],
-      discipline: index % 4 === 1 ? "DRIFT" : index % 4 === 3 ? "MIXED" : "GRIP",
-      beginner: index % 3 !== 1, sourceUrl: circuit.website, status: "DEMO", verifiedAt: null
+      discipline: index === 0 ? "GRIP" : disciplines[index % disciplines.length],
+      beginner: index % 3 !== 1, sourceUrl: circuit.website, status: "DEMO", verifiedAt: null,
+      descriptionOriginal: index === 0 ? "Fictional practice day for demonstrating the event explorer. This is not a real booking opportunity." : null,
+      descriptionLanguage: index === 0 ? "en" : null,
+      descriptionTranslation: index === 0 ? "イベント検索のデモ用の架空の練習会です。実際に申し込めるイベントではありません。" : null,
+      translationStatus: index === 0 ? "EDITED" : "NONE"
     };
   });
 }

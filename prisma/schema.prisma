@@ -8,15 +8,30 @@ datasource db {
 }
 
 model User {
-  id            String    @id @default(cuid())
+  id            String        @id @default(cuid())
   name          String?
-  email         String?   @unique
+  email         String?       @unique
   emailVerified DateTime?
   image         String?
   accounts      Account[]
   sessions      Session[]
   billing       Billing?
   searches      SavedSearch[]
+  accountType   AccountType?
+  onboarded     Boolean       @default(false)
+  locale        String        @default("en")
+  events        Event[]
+}
+
+enum AccountType {
+  DRIVER
+  SPECTATOR
+  ORGANIZER
+}
+
+enum MembershipPlan {
+  ATTENDEE
+  ORGANIZER
 }
 
 model Account {
@@ -32,7 +47,7 @@ model Account {
   scope             String?
   id_token          String? @db.Text
   session_state     String?
-  user              User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
 }
@@ -42,7 +57,7 @@ model Session {
   sessionToken String   @unique
   userId       String
   expires      DateTime
-  user         User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model VerificationToken {
@@ -54,7 +69,7 @@ model VerificationToken {
 }
 
 model Circuit {
-  id         String @id
+  id         String  @id
   name       String
   nameJa     String
   prefecture String
@@ -69,51 +84,77 @@ enum Discipline {
   GRIP
   DRIFT
   MIXED
+  GYMKHANA
+  PVC_DRIFT
+  SHOW
+  OTHER
 }
 
 enum EventStatus {
   DEMO
   VERIFIED
+  DRAFT
+  ORGANIZER
+}
+
+enum TranslationStatus {
+  NONE
+  AUTO
+  EDITED
+  STALE
+  FAILED
 }
 
 model Event {
-  id            String      @id @default(cuid())
-  title         String
-  organizer     String
-  circuitId     String
-  circuit       Circuit     @relation(fields: [circuitId], references: [id])
-  startsAt      DateTime
-  priceYen      Int?
-  discipline    Discipline
-  beginner      Boolean     @default(false)
-  sourceUrl     String
-  status        EventStatus @default(DEMO)
-  verifiedAt    DateTime?
-  createdAt     DateTime    @default(now())
-  deliveries    AlertDelivery[]
+  id                     String            @id @default(cuid())
+  title                  String
+  organizer              String
+  circuitId              String
+  circuit                Circuit           @relation(fields: [circuitId], references: [id])
+  startsAt               DateTime
+  priceYen               Int?
+  discipline             Discipline
+  beginner               Boolean           @default(false)
+  sourceUrl              String
+  status                 EventStatus       @default(DEMO)
+  verifiedAt             DateTime?
+  createdAt              DateTime          @default(now())
+  deliveries             AlertDelivery[]
+  ownerId                String?
+  owner                  User?             @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  publishedAt            DateTime?
+  revision               Int               @default(0)
+  descriptionOriginal    String?           @db.Text
+  descriptionLanguage    String?
+  descriptionTranslation String?           @db.Text
+  translationStatus      TranslationStatus @default(NONE)
+  translationEdited      Boolean           @default(false)
 
   @@index([status, startsAt])
   @@index([circuitId, startsAt])
+  @@index([ownerId])
 }
 
 model Billing {
-  userId               String   @id
-  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  stripeCustomerId     String   @unique
-  stripeSubscriptionId String?  @unique
-  status               String   @default("inactive")
+  userId               String         @id
+  user                 User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stripeCustomerId     String         @unique
+  stripeSubscriptionId String?        @unique
+  status               String         @default("inactive")
+  plan                 MembershipPlan @default(ATTENDEE)
   currentPeriodEnd     DateTime?
-  updatedAt            DateTime @updatedAt
+  updatedAt            DateTime       @updatedAt
 }
 
 model SavedSearch {
-  id         String   @id @default(cuid())
+  id         String          @id @default(cuid())
   userId     String
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   name       String
   filters    Json
-  alerts     Boolean  @default(false)
-  createdAt  DateTime @default(now())
+  alerts     Boolean         @default(false)
+  locale     String          @default("en")
+  createdAt  DateTime        @default(now())
   deliveries AlertDelivery[]
 
   @@index([userId])

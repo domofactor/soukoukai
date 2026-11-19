@@ -1,5 +1,7 @@
 import { z } from "zod";
 import type { Circuit, TrackEvent } from "./types";
+import { disciplines } from "./event-types";
+import { regionLabel } from "./locale";
 
 const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine(
   (value) => !Number.isNaN(Date.parse(value)) && new Date(value).toISOString().slice(0, 10) === value,
@@ -9,7 +11,7 @@ export const filterSchema = z.object({
   query: z.string().trim().max(100).default(""),
   circuit: z.string().max(80).default(""),
   region: z.string().max(80).default(""),
-  discipline: z.enum(["", "GRIP", "DRIFT", "MIXED"]).default(""),
+  discipline: z.union([z.literal(""), z.enum(disciplines)]).default(""),
   from: z.union([z.literal(""), date]).default(""),
   to: z.union([z.literal(""), date]).default(""),
   beginner: z.boolean().default(false),
@@ -58,7 +60,9 @@ export function filterEvents(events: TrackEvent[], circuits: Circuit[], filters:
     if (filters.near && distanceKm(filters.near.latitude, filters.near.longitude,
       circuit.latitude, circuit.longitude) > filters.near.radiusKm) return false;
     return !query || [event.title, event.organizer, circuit.name, circuit.nameJa,
-      circuit.prefecture, circuit.region].join(" ").toLocaleLowerCase().includes(query);
+      circuit.prefecture, circuit.region, regionLabel(circuit.region, "ja"),
+      event.descriptionOriginal, event.translationStatus === "AUTO" || event.translationStatus === "EDITED" ? event.descriptionTranslation : ""]
+      .join(" ").toLocaleLowerCase().includes(query);
   }).sort((a, b) => a.startsAt.localeCompare(b.startsAt));
 }
 

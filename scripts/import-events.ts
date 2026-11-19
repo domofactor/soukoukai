@@ -12,10 +12,19 @@ async function main() {
   const circuits = await db.circuit.findMany({ select: { id: true } });
   const unknown = events.find((event) => !circuits.some((circuit) => circuit.id === event.circuitId));
   if (unknown) throw new Error(`Unknown circuit ID: ${unknown.circuitId}. Add the circuit before importing events.`);
-  await db.$transaction(events.map((event) => {
-    const data = { ...event, startsAt: new Date(event.startsAt), verifiedAt: new Date(event.verifiedAt), status: "VERIFIED" as const };
-    return db.event.upsert({ where: { id: event.id }, create: data, update: data });
-  }));
+  await db.$transaction(async (tx) => {
+    for (const event of events) {
+      const previous = await tx.event.findUnique({ where: { id: event.id } });
+      if (previous?.ownerId) throw new Error(`Event ID ${event.id} belongs to an organizer and cannot be overwritten by an import.`);
+      const data = { ...event, startsAt: new Date(event.startsAt), verifiedAt: new Date(event.verifiedAt),
+        status: "VERIFIED" as const, publishedAt: previous?.publishedAt ?? previous?.createdAt ?? new Date(),
+        descriptionOriginal: event.descriptionOriginal ?? null, descriptionLanguage: event.descriptionLanguage ?? null,
+        descriptionTranslation: event.descriptionTranslation ?? null,
+        translationStatus: event.descriptionTranslation ? "EDITED" as const : "NONE" as const,
+        translationEdited: Boolean(event.descriptionTranslation) };
+      await tx.event.upsert({ where: { id: event.id }, create: data, update: data });
+    }
+  });
   console.log(`Published ${events.length} verified event listings.`);
 }
 main().catch((error: unknown) => {

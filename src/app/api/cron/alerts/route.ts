@@ -3,8 +3,11 @@ import { Resend } from "resend";
 import { db } from "@/lib/db";
 import { isDemo } from "@/lib/data";
 import { hasPro } from "@/lib/entitlements";
-import { filterEvents, filterSchema, japanDate } from "@/lib/search";
+import { filterEvents, filterSchema } from "@/lib/search";
 import { appUrl } from "@/lib/billing";
+import { publicEventsWhere } from "@/lib/event-visibility";
+import { alertMessage } from "@/lib/alert-message";
+import { normalizeLocale } from "@/lib/locale";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -28,43 +31,50 @@ export async function GET(request: Request) {
       db.circuit.findMany()
     ]);
     for (const search of searches) {
-      if (!hasPro(search.user.billing) || !search.user.email) continue;
+      if (search.user.accountType === "ORGANIZER" || !hasPro(search.user.billing) || !search.user.email) continue;
       const filters = filterSchema.parse(search.filters);
       const rows = await db.event.findMany({
-        where: { status: "VERIFIED", verifiedAt: { not: null }, startsAt: { gte: new Date() },
-          createdAt: { gt: search.createdAt }, deliveries: { none: { searchId: search.id, sentAt: { not: null } } } },
+        where: { ...publicEventsWhere(),
+          publishedAt: { gt: search.createdAt }, deliveries: { none: { searchId: search.id, sentAt: { not: null } } } },
         orderBy: { startsAt: "asc" }
       });
       const events = rows.map((row) => ({
         ...row, startsAt: row.startsAt.toISOString(), verifiedAt: row.verifiedAt?.toISOString() ?? null
       }));
       for (const event of filterEvents(events, circuits, filters)) {
-        const delivery = await db.alertDelivery.upsert({
+        // Persist the idempotency key before the external send, even if the send transaction rolls back.
+        const reserved = await db.alertDelivery.upsert({
           where: { searchId_eventId: { searchId: search.id, eventId: event.id } },
           update: {}, create: { searchId: search.id, eventId: event.id }
         });
-        if (delivery.sentAt) continue;
-        // Resend's idempotency keys expire after 24h. Ambiguous older sends need operator reconciliation.
-        if (Date.now() - delivery.createdAt.getTime() >= 23 * 60 * 60 * 1000) {
-          throw new Error(`Alert delivery ${delivery.id} requires manual reconciliation before retry.`);
-        }
-        const circuit = circuits.find((entry) => entry.id === event.circuitId)!;
-        const { error } = await resend.emails.send({
-          from: process.env.EMAIL_FROM, to: search.user.email,
-          subject: `New track-day listing: ${event.title}`,
-          text: [
-            `A new listing matches "${search.name}".`, "", event.title,
-            `${circuit.name} · ${circuit.prefecture}`, `${japanDate(event.startsAt)} (Japan time)`,
-            `Organizer: ${event.organizer}`,
-            event.priceYen === null ? "Entry fee: check with organizer" : `Listed entry fee: JPY ${event.priceYen}`,
-            "", "Open the event explorer to review details before booking:", appUrl(`/?circuit=${circuit.id}#explore`),
-            "", "Manage or stop these alerts by deleting the saved search in your garage:", appUrl("/account"),
-            "", "Soukoukai does not sell event tickets. Always confirm the schedule and requirements with the organizer."
-          ].join("\n")
-        }, { idempotencyKey: `alert-${delivery.id}` });
-        if (error) throw new Error(`Email provider rejected alert ${delivery.id}: ${error.message}`);
-        await db.alertDelivery.update({ where: { id: delivery.id }, data: { sentAt: new Date() } });
-        sent++;
+        const delivered = await db.$transaction(async (tx) => {
+          // Serialize delivery with edits/withdrawal and other senders. Recheck live visibility and filters.
+          await tx.$queryRaw`SELECT "id" FROM "Event" WHERE "id" = ${event.id} FOR UPDATE`;
+          const live = await tx.event.findFirst({ where: { id: event.id, ...publicEventsWhere() } });
+          if (!live) return false;
+          const current = { ...live, startsAt: live.startsAt.toISOString(), verifiedAt: live.verifiedAt?.toISOString() ?? null };
+          if (!filterEvents([current], circuits, filters).length) return false;
+          const subscriber = await tx.user.findUnique({ where: { id: search.userId }, include: { billing: true } });
+          if (!subscriber?.email || subscriber.accountType === "ORGANIZER" || !hasPro(subscriber.billing)) return false;
+          await tx.$queryRaw`SELECT "id" FROM "SavedSearch" WHERE "id" = ${search.id} FOR UPDATE`;
+          const liveSearch = await tx.savedSearch.findUnique({ where: { id: search.id } });
+          if (!liveSearch?.alerts) return false;
+          const delivery = await tx.alertDelivery.findUnique({ where: { id: reserved.id } });
+          if (!delivery || delivery.sentAt) return false;
+          // Resend's idempotency keys expire after 24h. Ambiguous older sends need operator reconciliation.
+          if (Date.now() - delivery.createdAt.getTime() >= 23 * 60 * 60 * 1000) {
+            throw new Error(`Alert delivery ${delivery.id} requires manual reconciliation before retry.`);
+          }
+          const circuit = circuits.find((entry) => entry.id === current.circuitId)!;
+          const { error } = await resend.emails.send({
+            from: process.env.EMAIL_FROM!, to: subscriber.email,
+            ...alertMessage(current, circuit, search.name, normalizeLocale(search.locale), appUrl)
+          }, { idempotencyKey: `alert-${delivery.id}` });
+          if (error) throw new Error(`Email provider rejected alert ${delivery.id}: ${error.message}`);
+          await tx.alertDelivery.update({ where: { id: delivery.id }, data: { sentAt: new Date() } });
+          return true;
+        }, { timeout: 20000 });
+        if (delivered) sent++;
         if (sent >= 50) return Response.json({ sent, moreWorkMayRemain: true }, { headers: { "Cache-Control": "no-store" } });
       }
     }

@@ -1,6 +1,7 @@
 import { db } from "./db";
 import { demoCircuits, demoEvents } from "./demo";
 import type { TrackEvent } from "./types";
+import { publicEventsWhere } from "./event-visibility";
 
 export function isDemo() {
   return process.env.DEMO_MODE === "true" ||
@@ -13,7 +14,7 @@ export async function discoveryData() {
   const [circuits, rows] = await Promise.all([
     db.circuit.findMany({ orderBy: { name: "asc" } }),
     db.event.findMany({
-      where: { status: "VERIFIED", startsAt: { gte: new Date() }, verifiedAt: { not: null } },
+      where: publicEventsWhere(),
       orderBy: { startsAt: "asc" }
     })
   ]);
