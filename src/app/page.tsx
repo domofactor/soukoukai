@@ -4,21 +4,24 @@ import { discoveryData } from "@/lib/data";
 import { currentUser } from "@/lib/auth";
 import { proForUser } from "@/lib/billing";
 import { Explorer } from "@/components/explorer";
+import { getLocale } from "@/lib/server-locale";
+import { regionLabel, translator } from "@/lib/locale";
 
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const [{ circuits, events, demo }, user] = await Promise.all([discoveryData(), currentUser()]);
+  const [{ circuits, events, demo }, user, locale] = await Promise.all([discoveryData(), currentUser(), getLocale()]);
+  const t = translator(locale);
   const pro = user ? await proForUser(user.id) : false;
   return (
     <main id="main">
       <section className="hero">
         <div className="hero-copy">
-          <div className="eyebrow"><span className="live-dot" /> THE OPEN ROAD ENDS. THE GOOD PART STARTS.</div>
-          <h1>Less searching.<br /><span>More seat time.</span></h1>
-          <p>Your next track day is out there. Find automotive events<br className="desktop-break" /> at circuits across Japan, all in one place.</p>
-          <a className="button dark" href="#explore">Find your next session <ArrowDown size={16} /></a>
-          <div className="hero-meta"><span><MapPin size={14} /> Across Japan</span><span><CalendarDays size={14} /> Your schedule</span><span><Route size={14} /> Your kind of driving</span></div>
+          <div className="eyebrow"><span className="live-dot" /> {t("THE OPEN ROAD ENDS. THE GOOD PART STARTS.", "次の楽しみは、サーキットで。")}</div>
+          <h1>{t("Less searching.", "探す時間を、")}<br /><span>{t("More seat time.", "走る時間に。")}</span></h1>
+          <p>{t("Find automotive events at circuits across Japan, all in one place.", "日本全国の走行会・クルマのイベントを、ひとつの場所で。")}</p>
+          <a className="button dark" href="#explore">{t("Find your next session", "次のイベントを探す")} <ArrowDown size={16} /></a>
+          <div className="hero-meta"><span><MapPin size={14} /> {t("Across Japan", "日本全国")}</span><span><CalendarDays size={14} /> {t("Your schedule", "予定に合わせて")}</span><span><Route size={14} /> {t("Your kind of driving", "好みのスタイルで")}</span></div>
         </div>
         <div className="hero-art" aria-hidden="true">
           <div className="art-grid" />
@@ -33,22 +36,22 @@ export default async function Home() {
           <span className="art-label">JAPAN TRACK DAY FIELD GUIDE</span>
         </div>
       </section>
-      <div className="discovery-strip"><span>ONE COUNTRY. COUNTLESS GOOD LAPS.</span><span>{circuits.length} circuits in the directory <span className="strip-dot">·</span> Grip, drift & everything between</span></div>
-      {demo && <div className="demo-banner" role="status"><strong>You&apos;re exploring a demo.</strong> Events, dates, organizers, and prices are fictional. Circuit locations are reference data, not verified schedules. <a href="/about">About our data <ArrowUpRight size={13} /></a></div>}
-      <Suspense fallback={<div className="page-shell">Loading event explorer…</div>}>
+      <div className="discovery-strip"><span>{t("ONE COUNTRY. COUNTLESS GOOD LAPS.", "日本全国、走る楽しさを。")}</span><span>{circuits.length} {t("circuits in the directory", "サーキットを掲載")} <span className="strip-dot">·</span> {t("Grip, drift, gymkhana, shows & more", "グリップ・ドリフト・ジムカーナ・ショーなど")}</span></div>
+      {demo && <div className="demo-banner" role="status"><strong>{t("You're exploring a demo.", "デモを表示しています。")}</strong> {t("Events, dates, organizers, and prices are fictional. Circuit locations are reference data, not verified schedules.", "イベント・日程・主催者・料金は架空のサンプルです。サーキットの位置は参考情報で、実際の開催予定ではありません。")} <a href="/about">{t("About our data", "掲載情報について")} <ArrowUpRight size={13} /></a></div>}
+      <Suspense fallback={<div className="page-shell">{t("Loading event explorer…", "イベントを読み込み中…")}</div>}>
         <Explorer circuits={circuits} events={events} pro={pro} signedIn={Boolean(user)} demo={demo} />
       </Suspense>
       <section id="circuits" className="circuits-section">
-        <div className="section-heading"><div><div className="eyebrow">KNOW WHERE YOU&apos;RE GOING</div><h2>Find your corner of Japan.</h2></div><span className="muted">{circuits.length} circuits to explore</span></div>
+        <div className="section-heading"><div><div className="eyebrow">{t("KNOW WHERE YOU'RE GOING", "次の目的地を見つけよう")}</div><h2>{t("Find your corner of Japan.", "お気に入りのサーキットへ。")}</h2></div><span className="muted">{circuits.length} {t("circuits to explore", "サーキット")}</span></div>
         <div className="circuit-grid">{circuits.map((circuit, index) => (
           <a key={circuit.id} href={`/?circuit=${circuit.id}#explore`} className="circuit-card">
             <span className="circuit-number">{String(index + 1).padStart(2, "0")}</span><ArrowUpRight size={17} />
-            <h3>{circuit.name}</h3><span lang="ja">{circuit.nameJa}</span>
-            <p><MapPin size={13} /> {circuit.prefecture} · {circuit.region}</p>
+            <h3>{locale === "ja" ? circuit.nameJa : circuit.name}</h3><span lang={locale === "ja" ? "en" : "ja"}>{locale === "ja" ? circuit.name : circuit.nameJa}</span>
+            <p><MapPin size={13} /> {circuit.prefecture} · {regionLabel(circuit.region, locale)}</p>
           </a>
         ))}</div>
       </section>
-      <section className="pro-banner"><div><span className="eyebrow">LESS ADMIN. MORE ADRENALINE.</span><h2>A little more planning power.</h2><p>Save your searches and hear when new matching events are listed.</p></div><a className="button lime" href="/membership">Meet Soukoukai Pro <ArrowUpRight size={17} /></a></section>
+      <section className="pro-banner"><div><span className="eyebrow">{t("LESS ADMIN. MORE ADRENALINE.", "もっと手軽に、もっと楽しもう。")}</span><h2>{t("Memberships for your next step.", "あなたに合う会員プラン。")}</h2><p>{t("Driver / Spectator searches and alerts. A separate portal and subscription for organizers.", "ドライバー・観客には検索保存と通知。主催者には専用ポータルと別の会員プラン。")}</p></div><a className="button lime" href="/membership">{t("Explore memberships", "会員プランを見る")} <ArrowUpRight size={17} /></a></section>
     </main>
   );
 }

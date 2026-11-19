@@ -1,0 +1,16 @@
+Made with Natural Earth.
+
+japan.json is the Japan (ADM0_A3=JPN) MultiPolygon extracted without geometry
+changes from Natural Earth's 1:10m Admin 0 Countries GeoJSON:
+https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_10m_admin_0_countries.geojson
+Source revision: ca96624a56bd078437bca8184e78163e5039ad19
+Retrieved 2026-11-19. Only Japan's geometry and a source/name property are retained.
+
+All Natural Earth raster and vector map data are in the public domain, including
+commercial use, modification, and redistribution:
+https://www.naturalearthdata.com/about/terms-of-use/
+
+This is a generalized reference map, not a navigation product or a statement
+about sovereignty. Small islands may be generalized at this scale. It includes
+Okinawa, the Ryukyu chain, and the Ogasawara islands. No other country's geometry
+or external map tiles are rendered.

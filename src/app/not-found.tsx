@@ -1,5 +1,8 @@
 import Link from "next/link";
+import { getLocale } from "@/lib/server-locale";
+import { translator } from "@/lib/locale";
 
-export default function NotFound() {
-  return <main id="main" className="narrow-page"><div className="eyebrow">OFF THE RACING LINE</div><h1>That page isn&apos;t here.</h1><Link className="button dark" href="/">Back to events</Link></main>;
+export default async function NotFound() {
+  const t = translator(await getLocale());
+  return <main id="main" className="narrow-page"><h1>{t("That page isn't here.", "ページが見つかりません。")}</h1><Link className="button dark" href="/">{t("Back to events", "イベント一覧へ戻る")}</Link></main>;
 }

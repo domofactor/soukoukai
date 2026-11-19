@@ -16,9 +16,13 @@ export type TrackEvent = {
   circuitId: string;
   startsAt: string;
   priceYen: number | null;
-  discipline: "GRIP" | "DRIFT" | "MIXED";
+  discipline: import("./event-types").Discipline;
   beginner: boolean;
   sourceUrl: string;
-  status: "DEMO" | "VERIFIED";
+  status: "DEMO" | "VERIFIED" | "ORGANIZER" | "DRAFT";
   verifiedAt: string | null;
+  descriptionOriginal?: string | null;
+  descriptionLanguage?: string | null;
+  descriptionTranslation?: string | null;
+  translationStatus?: "NONE" | "AUTO" | "EDITED" | "STALE" | "FAILED";
 };
